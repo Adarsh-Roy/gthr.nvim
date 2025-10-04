@@ -10,7 +10,7 @@ Neovim integration for [gthr](https://github.com/Adarsh-Roy/gthr) - a CLI tool f
 
 - **Interactive Mode** - Opens gthr's TUI in a floating window
 - **Buffer Integration** - Pre-include all open buffers in gthr
-- **Direct Mode** - Gather context from all open buffers directly to clipboard
+- **Direct Mode** - Gather context from all open buffers in current working directory directly to clipboard
 - **Auto-Install** - Automatically downloads the correct gthr version if not found
 
 ## Installation
