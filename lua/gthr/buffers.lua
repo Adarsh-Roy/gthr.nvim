@@ -3,10 +3,14 @@ local M = {}
 
 --- Get list of all valid file buffer paths
 --- Filters out special buffers (help, terminal, quickfix, etc.)
---- @return string[] List of absolute file paths
-function M.get_file_paths()
+--- @param relative? boolean Return relative paths instead of absolute (default: true)
+--- @return string[] List of file paths
+function M.get_file_paths(relative)
+  if relative == nil then relative = true end
+
   local buffers = vim.api.nvim_list_bufs()
   local paths = {}
+  local cwd = vim.fn.getcwd()
 
   for _, buf in ipairs(buffers) do
     -- Check if buffer is loaded, listed, and is a normal file buffer
@@ -16,6 +20,10 @@ function M.get_file_paths()
       local path = vim.api.nvim_buf_get_name(buf)
       -- Only include paths that are non-empty and readable files
       if path ~= '' and vim.fn.filereadable(path) == 1 then
+        -- Convert to relative path if requested
+        if relative then
+          path = vim.fn.fnamemodify(path, ':.')
+        end
         table.insert(paths, path)
       end
     end

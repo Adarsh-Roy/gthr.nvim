@@ -48,7 +48,7 @@ end
 
 --- Open gthr in interactive mode with all open buffers pre-included
 function M.open_with_buffers()
-  local paths = buffers.get_file_paths()
+  local paths = buffers.get_file_paths(true) -- Use relative paths
 
   if #paths == 0 then
     vim.notify('No file buffers open', vim.log.levels.WARN)
@@ -56,18 +56,19 @@ function M.open_with_buffers()
   end
 
   get_gthr_cmd(function(gthr_cmd)
-    -- Build command with include flags for each buffer
-    local cmd = gthr_cmd .. ' interactive'
+    -- Build command: gthr -i path1 -i path2 ... interactive
+    local cmd = gthr_cmd
     cmd = buffers.build_include_args(paths, cmd)
+    cmd = cmd .. ' interactive'
+
     floating.open_terminal(cmd)
   end)
 end
 
 --- Gather context from all open buffers using gthr direct mode
---- Output is automatically copied to clipboard
+--- Output is automatically copied to clipboard by gthr itself
 function M.gather()
-  local cfg = config.get()
-  local paths = buffers.get_file_paths()
+  local paths = buffers.get_file_paths(true) -- Use relative paths
 
   if #paths == 0 then
     vim.notify('No file buffers open', vim.log.levels.WARN)
@@ -75,22 +76,23 @@ function M.gather()
   end
 
   get_gthr_cmd(function(gthr_cmd)
-    -- Build direct mode command
-    local cmd = gthr_cmd .. ' direct'
+    -- Build command: gthr -i path1 -i path2 ... direct
+    local cmd = gthr_cmd
     cmd = buffers.build_include_args(paths, cmd)
+    cmd = cmd .. ' direct'
 
-    -- Execute command and capture output
-    local output = vim.fn.system(cmd)
-    local exit_code = vim.v.shell_error
-
-    if exit_code ~= 0 then
-      vim.notify('gthr failed with exit code ' .. exit_code, vim.log.levels.ERROR)
-      return
-    end
-
-    -- Copy to clipboard
-    vim.fn.setreg(cfg.clipboard, output)
-    vim.notify('Context gathered to clipboard (' .. #paths .. ' files)', vim.log.levels.INFO)
+    -- Execute command - gthr handles clipboard copying itself
+    vim.fn.jobstart(cmd, {
+      on_exit = function(_, exit_code)
+        vim.schedule(function()
+          if exit_code == 0 then
+            vim.notify('Context gathered from ' .. #paths .. ' file(s)', vim.log.levels.INFO)
+          else
+            vim.notify('gthr failed with exit code ' .. exit_code, vim.log.levels.ERROR)
+          end
+        end)
+      end,
+    })
   end)
 end
 

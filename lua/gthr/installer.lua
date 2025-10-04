@@ -1,8 +1,8 @@
 --- Installer module for gthr binary
 local M = {}
 
---- Default gthr version to install
-M.DEFAULT_VERSION = 'v0.2.0'
+--- Target gthr version - CHANGE THIS WHEN UPDATING GTHR VERSION
+M.GTHR_VERSION = 'v0.2.0'
 
 --- Get the installation directory for gthr binary
 --- @return string Installation directory path
@@ -69,29 +69,53 @@ function M.detect_platform(version)
   return asset_name, nil
 end
 
---- Check if gthr binary is available (either in PATH or installed by plugin)
---- @return boolean available Whether gthr is available
---- @return string|nil path Path to gthr binary
-function M.is_available()
-  -- First check if gthr is in PATH
-  if vim.fn.executable('gthr') == 1 then
-    return true, 'gthr'
+--- Get version of a gthr binary
+--- @param cmd string Path to gthr binary
+--- @return string|nil version Version string or nil if failed
+function M.get_version(cmd)
+  local output = vim.fn.system(cmd .. ' --version')
+  if vim.v.shell_error ~= 0 then
+    return nil
   end
 
-  -- Check if we have installed it
+  -- Parse version from output like "gthr 0.2.0"
+  local version = output:match('gthr%s+([%d%.]+)')
+  if version then
+    return 'v' .. version
+  end
+
+  return nil
+end
+
+--- Check if gthr binary is available with correct version
+--- @return boolean available Whether gthr with correct version is available
+--- @return string|nil path Path to gthr binary
+function M.is_available()
+  -- First check if we have installed it ourselves
   local binary_path = M.get_binary_path()
   if vim.fn.executable(binary_path) == 1 then
-    return true, binary_path
+    local version = M.get_version(binary_path)
+    if version == M.GTHR_VERSION then
+      return true, binary_path
+    end
+  end
+
+  -- Check if gthr is in PATH with correct version
+  if vim.fn.executable('gthr') == 1 then
+    local version = M.get_version('gthr')
+    if version == M.GTHR_VERSION then
+      return true, 'gthr'
+    end
   end
 
   return false, nil
 end
 
 --- Download and install gthr binary
---- @param version? string Version to install (default: M.DEFAULT_VERSION)
+--- @param version? string Version to install (default: M.GTHR_VERSION)
 --- @param callback? function Callback function(success, message)
 function M.install(version, callback)
-  version = version or M.DEFAULT_VERSION
+  version = version or M.GTHR_VERSION
   callback = callback or function() end
 
   -- Detect platform
@@ -166,7 +190,7 @@ function M.install(version, callback)
   })
 end
 
---- Ensure gthr is available, install if needed
+--- Ensure gthr is available with correct version, install if needed
 --- @param callback function Callback function(cmd) called with gthr command path
 function M.ensure_available(callback)
   local available, path = M.is_available()
@@ -176,9 +200,9 @@ function M.ensure_available(callback)
     return
   end
 
-  -- Not available, install it
-  vim.notify('gthr not found, installing...', vim.log.levels.INFO)
-  M.install(M.DEFAULT_VERSION, function(success, result)
+  -- Not available or wrong version, install it
+  vim.notify('gthr ' .. M.GTHR_VERSION .. ' not found, installing...', vim.log.levels.INFO)
+  M.install(M.GTHR_VERSION, function(success, result)
     if success then
       callback(result)
     else

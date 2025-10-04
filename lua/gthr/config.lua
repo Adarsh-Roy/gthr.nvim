@@ -3,7 +3,6 @@
 --- @field window GthrWindowConfig
 --- @field cmd string|nil
 --- @field auto_install boolean
---- @field version string
 --- @field gthr GthrOptions
 --- @field clipboard string
 
@@ -30,7 +29,6 @@ M.defaults = {
   },
   cmd = nil, -- Auto-detect or use installed binary
   auto_install = true, -- Automatically install gthr if not found
-  version = 'v0.2.0', -- Version to install
   gthr = {
     root = nil,
     respect_gitignore = true,

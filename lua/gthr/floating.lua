@@ -47,17 +47,23 @@ end
 function M.open_terminal(cmd)
   local bufnr, winid = M.create_window()
 
+  -- Set buffer-local options for faster escape
+  vim.bo[bufnr].filetype = 'gthr'
+
   -- Start terminal with on_exit callback to auto-close window
   vim.fn.termopen(cmd, {
     on_exit = function(job_id, exit_code, event)
-      -- Schedule the window close to avoid issues during callback
-      vim.schedule(function()
-        if vim.api.nvim_win_is_valid(winid) then
-          vim.api.nvim_win_close(winid, true)
-        end
-      end)
+      -- Close window immediately without scheduling
+      if vim.api.nvim_win_is_valid(winid) then
+        pcall(vim.api.nvim_win_close, winid, true)
+      end
     end
   })
+
+  -- Set window-local options for faster response
+  vim.wo[winid].number = false
+  vim.wo[winid].relativenumber = false
+  vim.wo[winid].signcolumn = 'no'
 
   -- Enter insert mode in terminal
   vim.cmd('startinsert')
