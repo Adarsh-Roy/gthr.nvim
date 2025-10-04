@@ -148,17 +148,23 @@ function M.install(version, callback)
     extract_cmd = string.format('unzip -o "%s" -d "%s" && mv "%s/gthr.exe" "%s"',
       temp_file, install_dir, install_dir, binary_path)
   else
-    -- Unix tar.gz file
-    extract_cmd = string.format('tar -xzf "%s" -C "%s"', temp_file, install_dir)
+    -- Unix tar.gz file - extract, find gthr binary (with or without platform suffix), move it to correct location
+    extract_cmd = string.format(
+      'tar -xzf "%s" -C "%s" && find "%s" -name "gthr*" -type f -perm +111 -exec mv {} "%s" \\;',
+      temp_file,
+      install_dir,
+      install_dir,
+      binary_path
+    )
   end
 
   local download_cmd = string.format(
-    'curl -fsSL "%s" -o "%s" && %s && rm "%s" && chmod +x "%s"',
+    'curl -fsSL "%s" -o "%s" && %s && chmod +x "%s" && rm "%s"',
     download_url,
     temp_file,
     extract_cmd,
-    temp_file,
-    binary_path
+    binary_path,
+    temp_file
   )
 
   -- Execute download and installation
