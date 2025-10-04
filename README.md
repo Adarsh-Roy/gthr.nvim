@@ -121,8 +121,3 @@ Auto-installation works on:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
-## Links
-
-- [gthr CLI](https://github.com/Adarsh-Roy/gthr) - The underlying CLI tool
-- [Report Issues](https://github.com/Adarsh-Roy/gthr.nvim/issues)
