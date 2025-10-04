@@ -1,0 +1,190 @@
+--- Installer module for gthr binary
+local M = {}
+
+--- Default gthr version to install
+M.DEFAULT_VERSION = 'v0.2.0'
+
+--- Get the installation directory for gthr binary
+--- @return string Installation directory path
+function M.get_install_dir()
+  local data_dir = vim.fn.stdpath('data')
+  return data_dir .. '/gthr-nvim'
+end
+
+--- Get the path where gthr binary should be installed
+--- @return string Binary path
+function M.get_binary_path()
+  local install_dir = M.get_install_dir()
+  if vim.fn.has('win32') == 1 then
+    return install_dir .. '/gthr.exe'
+  else
+    return install_dir .. '/gthr'
+  end
+end
+
+--- Detect current platform and return the appropriate asset name
+--- @param version string Version tag (e.g., 'v0.2.0')
+--- @return string|nil asset_name Asset filename or nil if platform not supported
+--- @return string|nil error Error message if platform not supported
+function M.detect_platform(version)
+  local os_name = vim.loop.os_uname().sysname
+  local arch = vim.loop.os_uname().machine
+
+  -- Normalize architecture names
+  if arch == 'arm64' then
+    arch = 'aarch64'
+  elseif arch == 'AMD64' or arch == 'x86_64' then
+    arch = 'x86_64'
+  end
+
+  local asset_name
+
+  if os_name == 'Darwin' then
+    -- macOS
+    if arch == 'aarch64' then
+      asset_name = 'gthr-aarch64-apple-darwin.tar.gz'
+    elseif arch == 'x86_64' then
+      asset_name = 'gthr-x86_64-apple-darwin.tar.gz'
+    else
+      return nil, 'Unsupported macOS architecture: ' .. arch
+    end
+  elseif os_name == 'Linux' then
+    -- Linux - prefer musl for better compatibility
+    if arch == 'x86_64' then
+      asset_name = 'gthr-x86_64-unknown-linux-musl.tar.gz'
+    else
+      return nil, 'Unsupported Linux architecture: ' .. arch
+    end
+  elseif os_name:match('Windows') then
+    -- Windows
+    if arch == 'x86_64' then
+      asset_name = 'gthr-x86_64-pc-windows-msvc.exe.zip'
+    else
+      return nil, 'Unsupported Windows architecture: ' .. arch
+    end
+  else
+    return nil, 'Unsupported operating system: ' .. os_name
+  end
+
+  return asset_name, nil
+end
+
+--- Check if gthr binary is available (either in PATH or installed by plugin)
+--- @return boolean available Whether gthr is available
+--- @return string|nil path Path to gthr binary
+function M.is_available()
+  -- First check if gthr is in PATH
+  if vim.fn.executable('gthr') == 1 then
+    return true, 'gthr'
+  end
+
+  -- Check if we have installed it
+  local binary_path = M.get_binary_path()
+  if vim.fn.executable(binary_path) == 1 then
+    return true, binary_path
+  end
+
+  return false, nil
+end
+
+--- Download and install gthr binary
+--- @param version? string Version to install (default: M.DEFAULT_VERSION)
+--- @param callback? function Callback function(success, message)
+function M.install(version, callback)
+  version = version or M.DEFAULT_VERSION
+  callback = callback or function() end
+
+  -- Detect platform
+  local asset_name, err = M.detect_platform(version)
+  if not asset_name then
+    callback(false, err)
+    return
+  end
+
+  local install_dir = M.get_install_dir()
+  local binary_path = M.get_binary_path()
+  local download_url = string.format(
+    'https://github.com/Adarsh-Roy/gthr/releases/download/%s/%s',
+    version,
+    asset_name
+  )
+
+  vim.notify('Installing gthr ' .. version .. '...', vim.log.levels.INFO)
+
+  -- Create installation directory
+  vim.fn.mkdir(install_dir, 'p')
+
+  -- Download and extract in background
+  local temp_file = install_dir .. '/' .. asset_name
+  local is_windows = vim.fn.has('win32') == 1
+  local extract_cmd
+
+  if asset_name:match('%.zip$') then
+    -- Windows zip file
+    extract_cmd = string.format('unzip -o "%s" -d "%s" && mv "%s/gthr.exe" "%s"',
+      temp_file, install_dir, install_dir, binary_path)
+  else
+    -- Unix tar.gz file
+    extract_cmd = string.format('tar -xzf "%s" -C "%s"', temp_file, install_dir)
+  end
+
+  local download_cmd = string.format(
+    'curl -fsSL "%s" -o "%s" && %s && rm "%s" && chmod +x "%s"',
+    download_url,
+    temp_file,
+    extract_cmd,
+    temp_file,
+    binary_path
+  )
+
+  -- Execute download and installation
+  vim.fn.jobstart(download_cmd, {
+    on_exit = function(_, exit_code)
+      if exit_code == 0 then
+        vim.schedule(function()
+          vim.notify('gthr installed successfully at ' .. binary_path, vim.log.levels.INFO)
+          callback(true, binary_path)
+        end)
+      else
+        vim.schedule(function()
+          vim.notify('Failed to install gthr (exit code: ' .. exit_code .. ')', vim.log.levels.ERROR)
+          callback(false, 'Installation failed')
+        end)
+      end
+    end,
+    on_stderr = function(_, data)
+      if data and #data > 0 then
+        vim.schedule(function()
+          for _, line in ipairs(data) do
+            if line ~= '' then
+              vim.notify('gthr install: ' .. line, vim.log.levels.WARN)
+            end
+          end
+        end)
+      end
+    end,
+  })
+end
+
+--- Ensure gthr is available, install if needed
+--- @param callback function Callback function(cmd) called with gthr command path
+function M.ensure_available(callback)
+  local available, path = M.is_available()
+
+  if available then
+    callback(path)
+    return
+  end
+
+  -- Not available, install it
+  vim.notify('gthr not found, installing...', vim.log.levels.INFO)
+  M.install(M.DEFAULT_VERSION, function(success, result)
+    if success then
+      callback(result)
+    else
+      vim.notify('Failed to install gthr: ' .. (result or 'unknown error'), vim.log.levels.ERROR)
+    end
+  end)
+end
+
+return M
