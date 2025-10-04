@@ -64,7 +64,6 @@ require('gthr').setup({
   },
   cmd = nil,          -- Auto-detect gthr (or specify custom path)
   auto_install = true, -- Automatically install gthr if not found
-  clipboard = '+',    -- System clipboard register
 })
 ```
 

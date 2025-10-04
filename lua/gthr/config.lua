@@ -4,7 +4,6 @@
 --- @field cmd string|nil
 --- @field auto_install boolean
 --- @field gthr GthrOptions
---- @field clipboard string
 
 --- @class GthrWindowConfig
 --- @field width number
@@ -35,7 +34,6 @@ M.defaults = {
     show_hidden = false,
     max_file_size = 2097152, -- 2MB
   },
-  clipboard = '+',
 }
 
 --- Current configuration

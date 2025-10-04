@@ -12,7 +12,6 @@ T['config']['has defaults'] = function()
   MiniTest.expect.equality(config.defaults.window.border, 'rounded')
   MiniTest.expect.equality(config.defaults.auto_install, true)
   MiniTest.expect.equality(config.defaults.version, 'v0.2.0')
-  MiniTest.expect.equality(config.defaults.clipboard, '+')
 end
 
 T['config']['setup merges options'] = function()
