@@ -4,7 +4,7 @@ Neovim integration for [gthr](https://github.com/Adarsh-Roy/gthr) - a CLI tool f
 
 > ⚠️ **Note:** This plugin is currently in **Alpha**.  
 
-**Current gthr version:** v0.2.0
+**Current gthr version:** v0.3.0
 
 ## Features
 
@@ -20,7 +20,7 @@ Neovim integration for [gthr](https://github.com/Adarsh-Roy/gthr) - a CLI tool f
 ```lua
 {
   'Adarsh-Roy/gthr.nvim',
-  version = 'v0.1.0',
+  version = 'v0.3.0',
   cmd = { 'Gthr', 'GthrBuffersInteractive', 'GthrBuffersDirect' },
   keys = {
     { '<leader>Go', '<cmd>Gthr<cr>', desc = 'Open gthr in floating window' },
@@ -36,7 +36,7 @@ Neovim integration for [gthr](https://github.com/Adarsh-Roy/gthr) - a CLI tool f
 ```lua
 use {
   'Adarsh-Roy/gthr.nvim',
-  tag = 'v0.1.0', -- Pin to specific version
+  tag = 'v0.3.0', -- Pin to specific version
   config = function()
     require('gthr').setup({})
   end
@@ -109,7 +109,7 @@ require('gthr').gather()
 - `curl` (for auto-installation)
 - `tar` (for extracting binaries on Unix)
 
-The plugin will automatically download gthr v0.2.0 on first use if not found.
+The plugin will automatically download gthr v0.3.0 on first use if not found. The auto-installed binary lives in `~/.local/share/nvim/gthr-nvim/` and is only used by the plugin. For terminal use, install gthr separately via Homebrew (`brew install adarsh-roy/gthr/gthr`) or cargo.
 
 ## Supported Platforms
 

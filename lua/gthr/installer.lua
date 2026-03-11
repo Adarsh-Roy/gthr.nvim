@@ -2,7 +2,7 @@
 local M = {}
 
 --- Target gthr version - CHANGE THIS WHEN UPDATING GTHR VERSION
-M.GTHR_VERSION = 'v0.2.0'
+M.GTHR_VERSION = 'v0.3.0'
 
 --- Get the installation directory for gthr binary
 --- @return string Installation directory path
@@ -135,7 +135,8 @@ function M.install(version, callback)
 
   vim.notify('Installing gthr ' .. version .. '...', vim.log.levels.INFO)
 
-  -- Create installation directory
+  -- Clean out old installation and recreate directory
+  vim.fn.delete(install_dir, 'rf')
   vim.fn.mkdir(install_dir, 'p')
 
   -- Download and extract in background
@@ -206,8 +207,21 @@ function M.ensure_available(callback)
     return
   end
 
-  -- Not available or wrong version, install it
-  vim.notify('gthr ' .. M.GTHR_VERSION .. ' not found, installing...', vim.log.levels.INFO)
+  -- Check what version exists (if any) to give a useful message
+  local existing_version = nil
+  if vim.fn.executable('gthr') == 1 then
+    existing_version = M.get_version('gthr')
+  end
+
+  if existing_version then
+    vim.notify(
+      'Found gthr ' .. existing_version .. ', but ' .. M.GTHR_VERSION .. ' is required. Installing ' .. M.GTHR_VERSION .. '...',
+      vim.log.levels.WARN
+    )
+  else
+    vim.notify('gthr not found, installing ' .. M.GTHR_VERSION .. '...', vim.log.levels.INFO)
+  end
+
   M.install(M.GTHR_VERSION, function(success, result)
     if success then
       callback(result)

@@ -32,17 +32,16 @@ function M.get_file_paths(relative)
   return paths
 end
 
---- Build gthr command arguments for including buffer paths
+--- Build gthr command arguments for explicit file paths
 --- @param paths string[] List of file paths
 --- @param base_cmd? string Base command to append to (default: "")
---- @return string Command with -i flags for each path
-function M.build_include_args(paths, base_cmd)
+--- @return string Command with -p flags for each path
+function M.build_path_args(paths, base_cmd)
   local cmd = base_cmd or ""
 
   for _, path in ipairs(paths) do
-    -- Escape path for shell
     local escaped_path = vim.fn.shellescape(path)
-    cmd = cmd .. " -i " .. escaped_path
+    cmd = cmd .. " -p " .. escaped_path
   end
 
   return cmd

@@ -6,7 +6,7 @@ T['installer'] = MiniTest.new_set()
 
 T['installer']['detect_platform returns asset name'] = function()
   local installer = require('gthr.installer')
-  local asset_name, err = installer.detect_platform('v0.2.0')
+  local asset_name, err = installer.detect_platform('v0.3.0')
 
   -- Should return a valid asset name without error
   MiniTest.expect.equality(err, nil)

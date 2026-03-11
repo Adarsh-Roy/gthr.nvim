@@ -56,9 +56,9 @@ function M.open_with_buffers()
   end
 
   get_gthr_cmd(function(gthr_cmd)
-    -- Build command: gthr -i path1 -i path2 ... interactive
+    -- Build command: gthr -p path1 -p path2 ... interactive
     local cmd = gthr_cmd
-    cmd = buffers.build_include_args(paths, cmd)
+    cmd = buffers.build_path_args(paths, cmd)
     cmd = cmd .. ' interactive'
 
     floating.open_terminal(cmd)
@@ -66,7 +66,7 @@ function M.open_with_buffers()
 end
 
 --- Gather context from all open buffers using gthr direct mode
---- Output is automatically copied to clipboard by gthr itself
+--- Streams gthr's stdout/stderr as notifications
 function M.gather()
   local paths = buffers.get_file_paths(true) -- Use relative paths
 
@@ -76,21 +76,42 @@ function M.gather()
   end
 
   get_gthr_cmd(function(gthr_cmd)
-    -- Build command: gthr -i path1 -i path2 ... direct
+    -- Build command: gthr -p path1 -p path2 ... direct
     local cmd = gthr_cmd
-    cmd = buffers.build_include_args(paths, cmd)
+    cmd = buffers.build_path_args(paths, cmd)
     cmd = cmd .. ' direct'
 
-    -- Execute command - gthr handles clipboard copying itself
     vim.fn.jobstart(cmd, {
+      stdout_buffered = false,
+      stderr_buffered = false,
+      on_stdout = function(_, data)
+        if data then
+          vim.schedule(function()
+            for _, line in ipairs(data) do
+              if line ~= '' then
+                vim.notify(line, vim.log.levels.INFO)
+              end
+            end
+          end)
+        end
+      end,
+      on_stderr = function(_, data)
+        if data then
+          vim.schedule(function()
+            for _, line in ipairs(data) do
+              if line ~= '' then
+                vim.notify(line, vim.log.levels.WARN)
+              end
+            end
+          end)
+        end
+      end,
       on_exit = function(_, exit_code)
-        vim.schedule(function()
-          if exit_code == 0 then
-            vim.notify('Context gathered from ' .. #paths .. ' file(s)', vim.log.levels.INFO)
-          else
+        if exit_code ~= 0 then
+          vim.schedule(function()
             vim.notify('gthr failed with exit code ' .. exit_code, vim.log.levels.ERROR)
-          end
-        end)
+          end)
+        end
       end,
     })
   end)
