@@ -53,7 +53,21 @@ function M.open_terminal(cmd)
   -- Start terminal with on_exit callback to auto-close window
   vim.fn.termopen(cmd, {
     on_exit = function(job_id, exit_code, event)
-      -- Close window immediately without scheduling
+      -- Capture final output lines from terminal buffer before closing
+      if vim.api.nvim_buf_is_valid(bufnr) then
+        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        -- Find last non-empty lines (skip trailing blanks)
+        for i = #lines, 1, -1 do
+          local line = vim.trim(lines[i])
+          if line ~= '' then
+            vim.schedule(function()
+              vim.notify(line, vim.log.levels.INFO)
+            end)
+            break
+          end
+        end
+      end
+
       if vim.api.nvim_win_is_valid(winid) then
         pcall(vim.api.nvim_win_close, winid, true)
       end
